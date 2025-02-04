@@ -1,5 +1,18 @@
 # Getting Started
 
+## Important
+The following section outlines the key differences between OpenShift 4.13 and OpenShift 4.18:
+
+1. OSSM Version: Minimum required OSSM version is 2.6.2.
+2. OpenShift CLI: Ensure you are using the latest [OpenShift CLI](https://docs.openshift.com/container-platform/4.17/cli_reference/openshift_cli/getting-started-cli.html).
+3. Gateway API Installation: The installation process remains largely the same with the following key change:
+   * In OpenShift 4.18, assigning the cluster-admin role to the Ingress Operator is no longer required.
+4. New Deployments in `openshift-ingress`: OSSM creates two Istio deployments. Ensure the pods are ready to make the SMCP operational.
+   * The deployment `demo-gateway` in 4.13 is now `demo-gateway-openshift-default` in 4.18.
+5. Wait for Gateway to be Ready: In 4.18, use the following command:
+   ```console
+   oc wait -n openshift-ingress --for=condition=programmed gateways.gateway.networking.k8s.io demo-gateway-openshift-default
+   ```
 In this section, we will show you how to install and configure Gateway API via the Ingress Operator. We will configure
 a simple HTTPRoute and backend to demo basic Gateway API functionality.
 
@@ -42,11 +55,11 @@ featuregate.config.openshift.io/cluster patched
 Wait for the ingress operator to successfully install the Gateway API CRDs:
 ```console
 $ oc get crd gatewayclasses.gateway.networking.k8s.io httproutes.gateway.networking.k8s.io gateways.gateway.networking.k8s.io referencegrants.gateway.networking.k8s.io
-NAME                                       CREATED AT
-gatewayclasses.gateway.networking.k8s.io   2023-04-04T18:02:55
-httproutes.gateway.networking.k8s.io        2023-04-04T18:02:55Z
-gateways.gateway.networking.k8s.io          2023-04-04T18:02:55Z
-referencegrants.gateway.networking.k8s.io   2023-04-04T18:02:56Z
+NAME                                        CREATED AT
+gatewayclasses.gateway.networking.k8s.io    2025-02-04T10:49:54Z
+httproutes.gateway.networking.k8s.io        2025-02-04T10:49:55Z
+gateways.gateway.networking.k8s.io          2025-02-04T10:49:54Z
+referencegrants.gateway.networking.k8s.io   2025-02-04T10:49:55Z
 ```
 
 Next, create the GatewayClass with the controller name "openshift.io/gateway-controller". This will instruct the Ingress Operator to install OSSM and configure it:
@@ -67,12 +80,11 @@ OSSM. Wait a minute or two for the SMCP to be created and become ready:
 ```console
 $ oc get smcp -n openshift-ingress
 NAME                READY   STATUS            PROFILES      VERSION   AGE
-openshift-gateway   5/5     ComponentsReady   ["default"]   2.4.0     107s
+openshift-gateway   5/5     ComponentsReady   ["default"]   2.4.0     10m
 ```
 
 OSSM will create two new Istio deployments in the `openshift-ingress` namespace. Ensure the pods for the deployments are running. These will need to become ready for the SMCP to also go ready:
 ```console
-$ oc get deployment -n openshift-ingress
 NAME                       READY   UP-TO-DATE   AVAILABLE   AGE
 istio-ingressgateway       1/1     1            1           42s
 istiod-openshift-gateway   1/1     1            1           55s
@@ -131,7 +143,6 @@ By default, Istio will [automatically provision](https://istio.io/latest/docs/ta
 $ oc get deployment -n openshift-ingress demo-gateway
 NAME           READY   UP-TO-DATE   AVAILABLE   AGE
 demo-gateway   1/1     1            1           25s
-
 $ oc get service -n openshift-ingress demo-gateway
 NAME           TYPE           CLUSTER-IP       EXTERNAL-IP                          PORT(S)                        AGE
 demo-gateway   LoadBalancer   172.30.175.176   domain.us-east-1.elb.amazonaws.com   15021:30608/TCP,80:31833/TCP   47s
@@ -204,7 +215,8 @@ $ oc new-app -n demo-app --name foo-app https://github.com/openshiftdemos/cakeph
     Application is not exposed. You can expose services to the outside world by executing one or more of the commands below:
      'oc expose service/foo-app'
     Run 'oc status' to view your app.
-
+```
+```
 $ oc rollout status deployment -w -n demo-app foo-app
 deployment "foo-app" successfully rolled out
 ```
@@ -234,7 +246,6 @@ Wait for the gateway deployment to be ready:
 $ oc wait -n openshift-ingress --for=condition=ready gateways.gateway.networking.k8s.io demo-gateway
 gateway.gateway.networking.k8s.io/demo-gateway condition met
 ```
-
 Now let’s send a request to the HTTPRoute we just created using an HTTP HEAD request to only get the headers. The `app` response header should have a value of "foo" for our demo application. You may have to wait a couple of minutes for the new DNS record to propagate before resolving:
 ```console
 $ curl -I http://demo.gwapi.${DOMAIN}
