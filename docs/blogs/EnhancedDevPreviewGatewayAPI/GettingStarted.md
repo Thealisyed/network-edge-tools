@@ -3,33 +3,23 @@
 In this section, we will show you how to install and configure Gateway API via the Ingress Operator. We will configure
 a simple HTTPRoute and backend to demo basic Gateway API functionality.
 
-Note: Since this is still a Developer Preview, it is important to note that it may not be flawless, and it is possible
+Note: Since this is still a Developer Preview, it is important to note that it may not be flawless and it is possible
 for bugs to be present.
 
 ## Prerequisites
 
 * A non-production OpenShift Cluster, version 4.13.5 or greater, on a cloud platform that supports Kubernetes service
-  load balancers (e.g. GCP, AWS, and Azure)
-* If OSSM is already installed, it must be OSSM 2.4.0
+  load balancers (e.g. GCP, AWS and Azure)
+* If OSSM is already installed, it must be OSSM 2.6.2
 * If OSSM is already installed, you must not have any existing ServiceMeshControlPlane CRs
-* The [OpenShift CLI](https://docs.openshift.com/container-platform/4.13/cli_reference/openshift_cli/getting-started-cli.html#cli-installing-cli_cli-developer-commands) binary (oc)
+* The [OpenShift CLI](https://docs.openshift.com/container-platform/4.17/cli_reference/openshift_cli/getting-started-cli.html) binary (oc)
 
 ## Installation via the Ingress Operator
 To install Gateway API using the Ingress Operator, you will do the following:
-1. Grant the Ingress Operator the cluster-admin role
-2. Enable the feature gate
-3. Create a GatewayClass with the controller name “openshift.io/gateway-controller”
+1. Enable the feature gate
+2. Create a GatewayClass with the controller name “openshift.io/gateway-controller”
 
 Let’s walk through each of these steps in more detail.
-
-First, grant the Ingress Operator the cluster-admin role. This role is required in order for the Ingress Operator to
-create the SMCP CR for OSSM:
-```console
-$ oc adm policy add-cluster-role-to-user cluster-admin -z ingress-operator -n openshift-ingress-operator
-clusterrole.rbac.authorization.k8s.io/cluster-admin added: "ingress-operator"
-```
-It is anticipated that this need for cluster-admin permissions will be eliminated in a future release of Gateway API in
-OpenShift.
 
 Enable the feature gate for Gateway API. This will instruct the cluster Ingress Operator to install the Gateway API CRDs.
 Please note that, since feature gates are stored in the machine config, patching the feature gate config will result in
@@ -42,11 +32,11 @@ featuregate.config.openshift.io/cluster patched
 Wait for the ingress operator to successfully install the Gateway API CRDs:
 ```console
 $ oc get crd gatewayclasses.gateway.networking.k8s.io httproutes.gateway.networking.k8s.io gateways.gateway.networking.k8s.io referencegrants.gateway.networking.k8s.io
-NAME                                       CREATED AT
-gatewayclasses.gateway.networking.k8s.io   2023-04-04T18:02:55
-httproutes.gateway.networking.k8s.io        2023-04-04T18:02:55Z
-gateways.gateway.networking.k8s.io          2023-04-04T18:02:55Z
-referencegrants.gateway.networking.k8s.io   2023-04-04T18:02:56Z
+NAME                                        CREATED AT
+gatewayclasses.gateway.networking.k8s.io    2025-02-04T10:49:54Z
+httproutes.gateway.networking.k8s.io        2025-02-04T10:49:55Z
+gateways.gateway.networking.k8s.io          2025-02-04T10:49:54Z
+referencegrants.gateway.networking.k8s.io   2025-02-04T10:49:55Z
 ```
 
 Next, create the GatewayClass with the controller name "openshift.io/gateway-controller". This will instruct the Ingress Operator to install OSSM and configure it:
@@ -67,16 +57,15 @@ OSSM. Wait a minute or two for the SMCP to be created and become ready:
 ```console
 $ oc get smcp -n openshift-ingress
 NAME                READY   STATUS            PROFILES      VERSION   AGE
-openshift-gateway   5/5     ComponentsReady   ["default"]   2.4.0     107s
+openshift-gateway   5/5     ComponentsReady   ["default"]   2.6.4     10m
 ```
 
 OSSM will create two new Istio deployments in the `openshift-ingress` namespace. Ensure the pods for the deployments are running. These will need to become ready for the SMCP to also go ready:
 ```console
 $ oc get deployment -n openshift-ingress
 NAME                       READY   UP-TO-DATE   AVAILABLE   AGE
-istio-ingressgateway       1/1     1            1           42s
-istiod-openshift-gateway   1/1     1            1           55s
-router-default             2/2     2            2           6h4m
+istiod-openshift-gateway   1/1     1            1           11m
+router-default             2/2     2            2           95m
 ```
 
 Gateway API and OSSM have been installed successfully and are ready to use. We are now ready to create Gateways and HTTPRoutes.
@@ -128,13 +117,14 @@ gateway.gateway.networking.k8s.io/demo-gateway created
 
 By default, Istio will [automatically provision](https://istio.io/latest/docs/tasks/traffic-management/ingress/gateway-api/#automated-deployment) a gateway deployment and service with the same name upon creation of this Gateway object:
 ```console
-$ oc get deployment -n openshift-ingress demo-gateway
-NAME           READY   UP-TO-DATE   AVAILABLE   AGE
-demo-gateway   1/1     1            1           25s
-
-$ oc get service -n openshift-ingress demo-gateway
-NAME           TYPE           CLUSTER-IP       EXTERNAL-IP                          PORT(S)                        AGE
-demo-gateway   LoadBalancer   172.30.175.176   domain.us-east-1.elb.amazonaws.com   15021:30608/TCP,80:31833/TCP   47s
+$ oc get deployment -n openshift-ingress demo-gateway-openshift-default
+NAME                             READY   UP-TO-DATE   AVAILABLE   AGE
+demo-gateway-openshift-default   1/1     1            1           52s
+```
+```
+$ oc get service -n openshift-ingress demo-gateway-openshift-default
+NAME                             TYPE           CLUSTER-IP      EXTERNAL-IP    PORT(S)                        AGE
+demo-gateway-openshift-default   LoadBalancer   172.30.196.97   35.223.33.32   15021:30775/TCP,80:30248/TCP   2m11s
 ```
 
 When the Gateway from the previous step is created, the Ingress Operator will automatically create a DNSRecord CR with
@@ -204,8 +194,10 @@ $ oc new-app -n demo-app --name foo-app https://github.com/openshiftdemos/cakeph
     Application is not exposed. You can expose services to the outside world by executing one or more of the commands below:
      'oc expose service/foo-app'
     Run 'oc status' to view your app.
-
+```
+```
 $ oc rollout status deployment -w -n demo-app foo-app
+oc rollout status deployment -w -n demo-app foo-app
 deployment "foo-app" successfully rolled out
 ```
 
@@ -229,11 +221,7 @@ spec:
 EOF
 httproute.gateway.networking.k8s.io/http created
 ```
-Wait for the gateway deployment to be ready:
-```console
-$ oc wait -n openshift-ingress --for=condition=ready gateways.gateway.networking.k8s.io demo-gateway
-gateway.gateway.networking.k8s.io/demo-gateway condition met
-```
+
 
 Now let’s send a request to the HTTPRoute we just created using an HTTP HEAD request to only get the headers. The `app` response header should have a value of "foo" for our demo application. You may have to wait a couple of minutes for the new DNS record to propagate before resolving:
 ```console
