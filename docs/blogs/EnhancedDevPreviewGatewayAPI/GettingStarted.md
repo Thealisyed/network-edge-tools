@@ -12,19 +12,16 @@ Note: Gateway API via Ingress Operator is GA in OpenShift 4.19.  These instructi
     * OSSM 3.0.1 for OpenShift 4.19
     * OSSM 3.1.0 for OpenShift 4.20
   * In OpenShift 4.18, if OSSM is already installed, you must not have any existing ServiceMeshControlPlane CRs
-  * The [OpenShift CLI](https://docs.okd.io/latest/cli_reference/openshift_cli/getting-started-cli.html#:~:text=using%20an%20RPM.-,Installing%20the%20OpenShift%20CLI,-You%20can%20install) binary (`oc`)
+  * The [OpenShift CLI](https://docs.redhat.com/en/documentation/openshift_container_platform/4.20/html/cli_tools/openshift-cli-oc) binary (`oc`)
 
 -----
 
 ## Installation via the Ingress Operator
 
-To install Gateway API using the Ingress Operator, you will do the following:
+To install Gateway API using the Ingress Operator:
 
-1.  For OCP versions before 4.20, grant the Ingress Operator the cluster-admin role, enable the feature gate, and
-    create a GatewayClass with the controller name `openshift.io/gateway-controller`
-2. For OCP 4.20 and later, just create a GatewayClass with the controller name `openshift.io/gateway-controller/v1` (note the additional version suffix)
-
-Let’s walk through each of these steps in more detail.
+* **OCP 4.20 and later:** Create a GatewayClass with controller name `openshift.io/gateway-controller/v1` (see [Step 3](#3-create-the-gatewayclass))
+* **OCP versions before 4.20:** Follow Steps 1-3 below (grant cluster-admin role, enable the `GatewayAPI` feature gate, create GatewayClass)
 
 ### 1\. Grant Cluster-Admin Role (For OCP version before 4.20)
 
@@ -53,6 +50,8 @@ featuregate.config.openshift.io/cluster patched
 ```
 
 Wait for the ingress operator to successfully install the Gateway API CRDs:
+
+> **Note:** OCP 4.20 and later also includes the `grpcroutes.gateway.networking.k8s.io` CRD for routing gRPC traffic.
 
 ```console
 $ oc get crd gatewayclasses.gateway.networking.k8s.io httproutes.gateway.networking.k8s.io gateways.gateway.networking.k8s.io referencegrants.gateway.networking.k8s.io
