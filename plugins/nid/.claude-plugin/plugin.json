@@ -1,0 +1,8 @@
+{
+  "name": "nid",
+  "description": "NID (Network Ingress & DNS) team tools for bug triage, diagnostics, and workflow automation",
+  "version": "0.1.0",
+  "author": {
+    "name": "github.com/openshift/network-edge-tools"
+  }
+}
