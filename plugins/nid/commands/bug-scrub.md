@@ -23,10 +23,10 @@ Run this before your standing bug scrub meeting. When someone opens a bug during
 This command delegates to `/bug-triage:scrub` with NID-specific arguments pre-filled:
 
 ```
-/bug-triage:scrub --team "Network Ingress and DNS" --team-docs plugins/nid/team-docs [--since {since}] [--issue {issue}] [--dry-run]
+/bug-triage:scrub --team "Network Ingress and DNS" --team-docs /absolute/path/to/network-edge-tools/plugins/nid/team-docs [--since {since}] [--issue {issue}] [--dry-run]
 ```
 
-1. **Resolve team-docs path**: The `--team-docs` path is relative to the network-edge-tools repo root. Resolve it to an absolute path before passing to `/bug-triage:scrub`.
+1. **Resolve team-docs path**: Determine the absolute path to `plugins/nid/team-docs/` within this repo (e.g., `~/network-edge-tools/plugins/nid/team-docs`). Always pass an absolute path to `/bug-triage:scrub`.
 
 2. **Forward arguments**: Pass through all user-provided arguments (`--since`, `--issue`, `--dry-run`) unchanged.
 
